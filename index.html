@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Replaced by `flutter build web --base-href /`. -->
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <script>
+    // Fresh build after a deploy (Technical Design §12.4). GitHub Pages lets
+    // browsers keep files for 10 minutes, so a returning visitor could get the
+    // old app. version.json is never cached: if it names a newer build, the
+    // app files are re-fetched once and the page reloads.
+    (function () {
+      var build = 'df6b7871ba5c';
+      if (build.charAt(0) === '_') return; // local build: no check
+      var base = document.baseURI;
+      fetch(new URL('version.json', base), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (v) {
+          if (!v || !v.version || v.version === build) return;
+          var key = 'nm-refresh-' + v.version;
+          try {
+            if (sessionStorage.getItem(key)) return; // tried once already
+            sessionStorage.setItem(key, '1');
+          } catch (e) {
+            return; // no storage: never risk a reload loop
+          }
+          var refresh = function (f) {
+            return fetch(new URL(f, base), { cache: 'reload' }).catch(function () {});
+          };
+          var files = ['', 'index.html', 'flutter_bootstrap.js', 'main.dart.mjs',
+            'main.dart.wasm', 'main.dart.js', 'assets/AssetManifest.bin.json',
+            '/404.html', location.href];
+          // Fonts (icon fonts are trimmed per build) are listed in FontManifest.
+          var fonts = refresh('assets/FontManifest.json')
+            .then(function (r) { return r && r.ok ? r.json() : []; })
+            .then(function (list) {
+              var all = [];
+              (list || []).forEach(function (family) {
+                (family.fonts || []).forEach(function (f) { all.push(refresh('assets/' + f.asset)); });
+              });
+              return Promise.all(all);
+            })
+            .catch(function () {});
+          Promise.all(files.map(refresh).concat([fonts]))
+            .then(function () { location.reload(); });
+        })
+        .catch(function () {});
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!--
+    Link-preview and search tags. Everything between the markers is rewritten
+    from the admin's Site settings by tool/inject_meta.mjs at deploy time and
+    by the weekly refresh (Technical Design §9). Do not edit by hand.
+  -->
+  <!-- META:START -->
+  <title>Portfolio</title>
+  <meta name="description" content="">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nusratmaherin.github.io/">
+  <meta property="og:site_name" content="Portfolio">
+  <meta property="og:title" content="Portfolio">
+  <meta property="og:description" content="">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Portfolio">
+  <meta name="twitter:description" content="">
+  <!-- META:END -->
+
+  <meta name="theme-color" content="#9C4A2F">
+  <!-- Start connecting to data, image and font hosts while the app loads (NFR performance). -->
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  <link rel="preconnect" href="https://res.cloudinary.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Instant loading screen (PRD FR-C-05, UI/UX §6.8). */
+    /* data-theme is written from the admin's theme mode at deploy
+       (tool/inject_meta.mjs); without it the device setting is followed. */
+    html, body { margin: 0; height: 100%; background: #FFF8F6; }
+    @media (prefers-color-scheme: dark) { html:not([data-theme=light]), html:not([data-theme=light]) body { background: #1A1110; } }
+    html[data-theme=dark], html[data-theme=dark] body { background: #1A1110; }
+    #loading {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+      font-family: Georgia, 'Times New Roman', serif; color: #231917;
+    }
+    @media (prefers-color-scheme: dark) { html:not([data-theme=light]) #loading { color: #F1DFDA; } }
+    html[data-theme=dark] #loading { color: #F1DFDA; }
+    #loading-name { font-size: clamp(28px, 6vw, 48px); letter-spacing: 0.02em; text-align: center; padding: 0 16px; }
+    #loading-line { width: 120px; height: 2px; background: currentColor; opacity: 0.25; animation: nm-pulse 1.6s ease-in-out infinite; }
+    @keyframes nm-pulse { 0%, 100% { opacity: 0.15; transform: scaleX(0.6); } 50% { opacity: 0.45; transform: scaleX(1); } }
+    @media (prefers-reduced-motion: reduce) { #loading-line { animation: none; } }
+  </style>
+</head>
+<body>
+  <!-- NOSCRIPT:START --><!-- NOSCRIPT:END -->
+  <div id="loading" aria-live="polite">
+    <!-- LOADING-NAME:START --><div id="loading-name"></div><!-- LOADING-NAME:END -->
+    <div id="loading-line"></div>
+  </div>
+
+  <script>
+    // Image protection (PRD FR-C-92): no context menu or drag-out anywhere.
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.addEventListener('dragstart', function (e) { e.preventDefault(); });
+  </script>
+
+  <script>
+    // Remove the loading screen once Flutter has drawn its first frame.
+    window.addEventListener('flutter-first-frame', function () {
+      var el = document.getElementById('loading');
+      if (el) el.remove();
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+
+  <!-- ANALYTICS: Cloudflare Web Analytics beacon is added here in M2 (PRD FR-C-95). -->
+</body>
+</html>

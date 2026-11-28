@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Replaced by `flutter build web --base-href /admin/`. -->
+  <base href="/admin/">
+
+  <meta charset="UTF-8">
+  <script>
+    // Fresh build after a deploy (Technical Design §12.4). GitHub Pages lets
+    // browsers keep files for 10 minutes, so a returning visitor could get the
+    // old app. version.json is never cached: if it names a newer build, the
+    // app files are re-fetched once and the page reloads.
+    (function () {
+      var build = 'df6b7871ba5c';
+      if (build.charAt(0) === '_') return; // local build: no check
+      var base = document.baseURI;
+      fetch(new URL('version.json', base), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (v) {
+          if (!v || !v.version || v.version === build) return;
+          var key = 'nm-refresh-' + v.version;
+          try {
+            if (sessionStorage.getItem(key)) return; // tried once already
+            sessionStorage.setItem(key, '1');
+          } catch (e) {
+            return; // no storage: never risk a reload loop
+          }
+          var refresh = function (f) {
+            return fetch(new URL(f, base), { cache: 'reload' }).catch(function () {});
+          };
+          var files = ['', 'index.html', 'flutter_bootstrap.js', 'main.dart.mjs',
+            'main.dart.wasm', 'main.dart.js', 'assets/AssetManifest.bin.json',
+            '/404.html', location.href];
+          // Fonts (icon fonts are trimmed per build) are listed in FontManifest.
+          var fonts = refresh('assets/FontManifest.json')
+            .then(function (r) { return r && r.ok ? r.json() : []; })
+            .then(function (list) {
+              var all = [];
+              (list || []).forEach(function (family) {
+                (family.fonts || []).forEach(function (f) { all.push(refresh('assets/' + f.asset)); });
+              });
+              return Promise.all(all);
+            })
+            .catch(function () {});
+          Promise.all(files.map(refresh).concat([fonts]))
+            .then(function () { location.reload(); });
+        })
+        .catch(function () {});
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin</title>
+
+  <meta name="theme-color" content="#5F6368">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body { margin: 0; height: 100%; background: #F8F9FA; }
+    @media (prefers-color-scheme: dark) { html, body { background: #121314; } }
+    #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+    #loading-line { width: 120px; height: 2px; background: #5F6368; opacity: 0.3; animation: nm-pulse 1.6s ease-in-out infinite; }
+    @keyframes nm-pulse { 0%, 100% { opacity: 0.15; transform: scaleX(0.6); } 50% { opacity: 0.45; transform: scaleX(1); } }
+    @media (prefers-reduced-motion: reduce) { #loading-line { animation: none; } }
+  </style>
+</head>
+<body>
+  <div id="loading"><div id="loading-line"></div></div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var el = document.getElementById('loading');
+      if (el) el.remove();
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+  <!-- No analytics in the admin panel (PRD FR-C-96). -->
+</body>
+</html>
